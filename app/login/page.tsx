@@ -160,14 +160,16 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+  
+          {/* Email Form */}
+          <form onSubmit={handleSubmit} className="space-y-4 p-5">
             {!isLogin && (
               <div>
                 <label className="text-sm font-medium mb-2 block">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                   <Input
                     type="text"
                     placeholder="John Doe"
@@ -175,7 +177,9 @@ export default function LoginPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, fullName: e.target.value })
                     }
-                    className="pl-10"
+                    className="pl-10 text-base"
+                    style={{ paddingLeft: "2.75rem" }}
+          
                   />
                 </div>
                 {errors.fullName && (
@@ -192,7 +196,7 @@ export default function LoginPage() {
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
                   type="email"
                   placeholder="you@example.com"
@@ -200,7 +204,9 @@ export default function LoginPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="pl-10"
+                  className="pl-10 text-base"
+                  style={{ paddingLeft: "2.75rem" }}
+
                 />
               </div>
               {errors.email && (
@@ -214,7 +220,7 @@ export default function LoginPage() {
             <div>
               <label className="text-sm font-medium mb-2 block">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
                   type="password"
                   placeholder="Enter your password"
@@ -222,7 +228,9 @@ export default function LoginPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className="pl-10"
+                  className="pl-10 text-base"
+                  style={{ paddingLeft: "2.75rem" }}
+
                 />
               </div>
               {errors.password && (
@@ -240,7 +248,7 @@ export default function LoginPage() {
                     Confirm Password
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       type="password"
                       placeholder="Confirm your password"
@@ -251,7 +259,7 @@ export default function LoginPage() {
                           confirmPassword: e.target.value,
                         })
                       }
-                      className="pl-10"
+                      style={{ paddingLeft: "2.75rem" }}
                     />
                   </div>
                   {errors.confirmPassword && (

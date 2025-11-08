@@ -47,7 +47,7 @@ export default function LandingPage() {
             <p className="text-lg sm:text-xl text-gray-400 mb-8 max-w-2xl mx-auto px-4">
               Protect routes, manage payments, and earn directly in crypto. The easiest way to monetize your API infrastructure on the Solana blockchain.
             </p>
-            <div className="flex items-center justify-center gap-4 flex-wrap px-4">
+            <div className="flex items-center justify-center gap-4 flex-wrap px-10">
               <Link href="/login">
                 <MonoButton size="lg" icon={<ArrowRight size={20} />}>
                   Get Started
@@ -65,7 +65,7 @@ export default function LandingPage() {
 
       {/* How It Works */}
       <section className="py-20 px-6 bg-[#0A0A0A]">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-10xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -77,7 +77,7 @@ export default function LandingPage() {
             <p className="text-gray-400 text-base sm:text-lg">Get started in three simple steps</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-20 max-w-10xl mx-auto ">
             {[
               {
                 step: "01",
@@ -107,7 +107,7 @@ export default function LandingPage() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   whileHover={{ y: -8 }}
-                  className="bg-[#111111] rounded-2xl p-8 border border-[#2A2A2A] hover:border-[#3A3A3A] transition-all"
+                  className="bg-[#111111] rounded-2xl p-20 border border-[#2A2A2A] hover:border-[#3A3A3A] transition-all w-full"
                 >
                   <div className="text-6xl font-bold text-gray-800 mb-4">{item.step}</div>
                   <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mb-4">
@@ -121,10 +121,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
+            <div className="h-5"></div>
       {/* Features Section */}
       <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-10xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -191,10 +191,11 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
+            {/* {Seperation} */}
+            <div className="h-5"></div>
       {/* CTA Section */}
       <section className="py-20 px-6 bg-[#0A0A0A]">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-10xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
