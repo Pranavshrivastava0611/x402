@@ -3,6 +3,8 @@
 import MonoCard from "@/components/ui/MonoCard";
 import { motion } from "framer-motion";
 import { Activity, Code, DollarSign, TrendingUp } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const revenueData = [
@@ -69,6 +71,17 @@ export default function DashboardPage() {
       color: "text-yellow-400",
     },
   ];
+
+  const router = useRouter();
+
+  useEffect(() => {
+    // Client-side guard (middleware already enforces server-side)
+    const hasCookieToken = typeof document !== "undefined" && document.cookie.includes("auth_token");
+    console.log("hasCookieToken" , hasCookieToken)
+    if (!hasCookieToken) {
+      router.replace(`/login?redirect=${encodeURIComponent("/dashboard")}`);
+    }
+  }, [router]);
 
   return (
     <div className="space-y-6">

@@ -1,60 +1,93 @@
+import { generateToken } from "@/lib/jwt";
 import { supabase } from "@/utils/Database_client";
+import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password } = body as { email?: string; password?: string };
 
-    // Validate input
+    // ✅ Input validation
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Email and password are required." },
         { status: 400 }
       );
     }
 
-    // Validate email format
+    // ✅ Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const sanitizedEmail = email.trim().toLowerCase();
+    if (!emailRegex.test(sanitizedEmail)) {
       return NextResponse.json(
-        { error: "Please enter a valid email address" },
+        { error: "Please enter a valid email address." },
         { status: 400 }
       );
     }
 
-    // Sign in with Supabase
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // ✅ Fetch user securely from Supabase
+    const { data: user, error: fetchError } = await supabase
+      .from("users")
+      .select("id, email, password_hash, full_name, email_verified, created_at")
+      .eq("email", email.toLowerCase().trim())
+      .maybeSingle(); // ✅ safer than `.single()` (avoids throw if not found)
 
-    if (error) {
+    if (fetchError || !user) {
+      console.error("User fetch error:", fetchError);
       return NextResponse.json(
-        { error: error.message || "Invalid email or password" },
+        { error: "Invalid email or password." },
         { status: 401 }
       );
     }
 
-    // Return user data (excluding sensitive information)
-    return NextResponse.json(
+    // ✅ Compare password
+    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatch) {
+      return NextResponse.json(
+        { error: "Invalid email or password." },
+        { status: 401 }
+      );
+    }
+
+    // ✅ Generate JWT
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+    });
+
+    // ✅ Prepare response
+    const response = NextResponse.json(
       {
-        message: "Login successful",
+        message: "Login successful.",
         user: {
-          id: data.user?.id,
-          email: data.user?.email,
-          created_at: data.user?.created_at,
+          id: user.id,
+          email: user.email,
+          full_name: user.full_name,
+          email_verified: user.email_verified,
+          created_at: user.created_at,
         },
-        session: data.session,
+        token,
+        redirect: "/dashboard",
       },
       { status: 200 }
     );
-  } catch (error) {
-    console.error("Login error:", error);
+
+    // ✅ Set JWT cookie (secure & httpOnly)
+    response.cookies.set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return response;
+  } catch (err: any) {
+    console.error("Login error:", err);
     return NextResponse.json(
-      { error: "An error occurred during login" },
+      { error: "An unexpected error occurred during login." },
       { status: 500 }
     );
   }
 }
-
