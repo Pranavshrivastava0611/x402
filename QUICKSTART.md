@@ -94,6 +94,25 @@ If you see TypeScript errors about missing modules, run:
 npm install
 ```
 
+### Email / OTP (Forgot Password)
+If you want the app to actually send OTP emails for password reset, install `nodemailer` and provide SMTP env vars:
+
+```bash
+npm install nodemailer
+```
+
+Add the following to your `.env.local` (example):
+
+```
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+SMTP_FROM="MonoPay <no-reply@example.com>"
+```
+
+If SMTP is not configured the app will log OTPs to the server console for development.
+
 ### Build Errors
 Clear `.next` folder and rebuild:
 ```bash

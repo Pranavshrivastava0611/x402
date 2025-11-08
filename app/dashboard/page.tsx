@@ -75,13 +75,12 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Client-side guard (middleware already enforces server-side)
-    const hasCookieToken = typeof document !== "undefined" && document.cookie.includes("auth_token");
-    console.log("hasCookieToken" , hasCookieToken)
-    if (!hasCookieToken) {
-      router.replace(`/login?redirect=${encodeURIComponent("/dashboard")}`);
-    }
-  }, [router]);
+  const session = localStorage.getItem("supabase_session");
+  if (!session) {
+    router.replace(`/login?redirect=${encodeURIComponent("/dashboard")}`);
+  }
+}, [router]);
+
 
   return (
     <div className="space-y-6">

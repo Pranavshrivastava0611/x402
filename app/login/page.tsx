@@ -22,6 +22,8 @@ export default function LoginPage() {
     acceptTerms: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // ✅ Validation Logic
   const validateForm = () => {
@@ -222,7 +224,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={(e) =>
@@ -232,6 +234,14 @@ export default function LoginPage() {
                   style={{ paddingLeft: "2.75rem" }}
 
                 />
+                <Button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  variant="link"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </Button>
               </div>
               {errors.password && (
                 <p className="text-sm text-destructive mt-1">
@@ -250,7 +260,7 @@ export default function LoginPage() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       placeholder="Confirm your password"
                       value={formData.confirmPassword}
                       onChange={(e) =>
@@ -261,6 +271,14 @@ export default function LoginPage() {
                       }
                       style={{ paddingLeft: "2.75rem" }}
                     />
+                    <Button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      variant="link"
+                    >
+                      {showConfirmPassword ? 'Hide' : 'Show'}
+                    </Button>
                   </div>
                   {errors.confirmPassword && (
                     <p className="text-sm text-destructive mt-1">
@@ -315,7 +333,7 @@ export default function LoginPage() {
             {isLogin && (
               <div className="flex justify-end pt-1">
                 <Link
-                  href="/forgot-password"
+                  href="/login/forgot"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Forgot password?

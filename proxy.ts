@@ -2,38 +2,39 @@ import { verifyToken } from "@/lib/jwt";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
+/**
+ * ✅ PUBLIC ROUTES
+ */
+const PUBLIC_PAGES = ["/", "/login", "/signup"];
+const PUBLIC_APIS = ["/api/login", "/api/signup"];
 
-
-const PUBLIC_PAGES = new Set(["/", "/login"]);
-const PUBLIC_API_PREFIXES = ["/api/login", "/api/signup"];
-
-function isPublicPage(pathname: string) {
-  return PUBLIC_PAGES.has(pathname);
+/**
+ * ✅ Helpers
+ */
+function isPublicPage(pathname: string): boolean {
+  return PUBLIC_PAGES.some((p) => pathname === p || pathname.startsWith(p));
 }
 
-function isPublicApi(pathname: string) {
-  return PUBLIC_API_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+function isPublicApi(pathname: string): boolean {
+  return PUBLIC_APIS.some((p) => pathname === p || pathname.startsWith(p));
 }
 
-function getToken(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
+function getToken(req: NextRequest): string | null {
+  const authHeader = req.headers.get("authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.replace("Bearer ", "");
+    return authHeader.split(" ")[1];
   }
-
-  const cookieToken = request.cookies.get("auth_token")?.value;
-  if (cookieToken) {
-    return cookieToken;
-  }
-
-  return null;
+  const cookieToken = req.cookies.get("auth_token")?.value;
+  return cookieToken || null;
 }
-console.log('proxxy working')
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const isApiRoute = pathname.startsWith("/api");
 
-  // Allow Next.js internals and public assets
+/**
+ * ✅ MAIN FUNCTION (must be named `proxy`)
+ */
+export function proxy(req: NextRequest) {
+  const { pathname, search } = req.nextUrl;
+
+  // Allow static & internal assets
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon.ico") ||
@@ -43,58 +44,50 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (!isApiRoute && isPublicPage(pathname)) {
+  // Allow public pages and public APIs
+  if (isPublicPage(pathname) || isPublicApi(pathname)) {
     return NextResponse.next();
   }
 
-  if (isApiRoute && isPublicApi(pathname)) {
-    return NextResponse.next();
-  }
+  // Extract token
+  const token = getToken(req);
 
-  const token = getToken(request);
-
+  // Redirect if token missing
   if (!token) {
-    if (isApiRoute) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const loginUrl = new URL("/login", request.url);
-    const redirectTarget = `${pathname}${request.nextUrl.search}`;
+    const loginUrl = new URL("/login", req.url);
+    const redirectTarget = `${pathname}${search}`;
     loginUrl.searchParams.set("redirect", redirectTarget);
     return NextResponse.redirect(loginUrl);
   }
 
-  const payload = verifyToken(token);
-
-  if (!payload) {
-    if (isApiRoute) {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
-    }
-
-    const loginUrl = new URL("/login", request.url);
-    const redirectTarget = `${pathname}${request.nextUrl.search}`;
+  // Verify token
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    const loginUrl = new URL("/login", req.url);
+    const redirectTarget = `${pathname}${search}`;
     loginUrl.searchParams.set("redirect", redirectTarget);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isApiRoute) {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-user-id", payload.userId);
-    requestHeaders.set("x-user-email", payload.email);
-
+  // Inject user headers for API routes
+  if (pathname.startsWith("/api")) {
+    const newHeaders = new Headers(req.headers);
+    newHeaders.set("x-user-id", decoded.userId);
+    newHeaders.set("x-user-email", decoded.email);
     return NextResponse.next({
-      request: {
-        headers: requestHeaders,
-      },
+      request: { headers: newHeaders },
     });
   }
 
+  // Otherwise allow request
   return NextResponse.next();
 }
 
+/**
+ * ✅ Middleware matcher (applies globally)
+ */
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|woff2?)$).*)",
   ],
 };
-
