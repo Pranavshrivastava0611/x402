@@ -12,23 +12,16 @@ import { Chrome, Lock, Mail, User } from "lucide-react";
 export default function LoginPage() {
   const router = useRouter();
 
-  const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: "",
     email: "",
     password: "",
-    confirmPassword: "",
-    acceptTerms: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // ✅ Validation Logic
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
     const email = formData.email.trim();
     const password = formData.password.trim();
 
@@ -40,75 +33,47 @@ export default function LoginPage() {
     else if (password.length < 8)
       newErrors.password = "Password must be at least 8 characters";
 
-    if (!isLogin) {
-      if (!formData.fullName.trim())
-        newErrors.fullName = "Full name is required";
-
-      if (!formData.confirmPassword)
-        newErrors.confirmPassword = "Please confirm your password";
-      else if (password !== formData.confirmPassword)
-        newErrors.confirmPassword = "Passwords do not match";
-
-      if (!formData.acceptTerms)
-        newErrors.acceptTerms = "You must accept the terms and conditions";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ Submit Logic
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsLoading(true);
     setErrors({});
 
     try {
-      const endpoint = isLogin ? "/api/login" : "/api/signup";
-      const payload = isLogin
-        ? { email: formData.email.trim(), password: formData.password }
-        : {
-            fullName: formData.fullName.trim(),
-            email: formData.email.trim(),
-            password: formData.password,
-            confirmPassword: formData.confirmPassword,
-            acceptTerms: formData.acceptTerms,
-          };
-
-      const response = await fetch(endpoint, {
+      const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email: formData.email.trim(), password: formData.password }),
       });
 
       const data = await response.json();
+      console.log('Login: Response status:', response.status);
+      console.log('Login: Response data:', data);
 
       if (!response.ok) {
-        setErrors({
-          general: data.error || "Something went wrong. Please try again.",
-        });
+        setErrors({ general: data.error || "Authentication failed" });
         setIsLoading(false);
         return;
       }
 
-      // ✅ Success - Redirect to dashboard
-      if (data.user) {
-        if (data.session) {
-          localStorage.setItem(
-            "supabase_session",
-            JSON.stringify(data.session)
-          );
-        }
-        router.push("/dashboard");
+      // Store session/token if provided
+      const sessionFromResponse = data.session ?? (data.token ? { token: data.token, user: data.user } : null);
+      if (sessionFromResponse) {
+        localStorage.setItem("supabase_session", JSON.stringify(sessionFromResponse));
+        const tokenToSet = data.token ?? sessionFromResponse.token;
+        if (tokenToSet) document.cookie = `auth_token=${tokenToSet}; path=/`;
       }
+
+      // Redirect to dashboard
+      router.push("/dashboard");
     } catch (err) {
       console.error("Authentication error:", err);
-      setErrors({
-        general: "An unexpected error occurred. Please try again later.",
-      });
+      setErrors({ general: "An unexpected error occurred. Please try again later." });
     } finally {
       setIsLoading(false);
     }
@@ -129,14 +94,8 @@ export default function LoginPage() {
         <Card className="p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">
-              {isLogin ? "Welcome back" : "Create account"}
-            </h1>
-            <p className="text-muted-foreground">
-              {isLogin
-                ? "Sign in to your account to continue"
-                : "Get started in seconds"}
-            </p>
+            <h1 className="text-2xl font-bold mb-2">Sign in to MonoPay</h1>
+            <p className="text-muted-foreground">Welcome back! Please sign in to continue</p>
           </div>
 
           {/* Google Auth */}
@@ -155,70 +114,28 @@ export default function LoginPage() {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-3 bg-background text-muted-foreground">
-                Or use email
-              </span>
+              <span className="px-3 bg-background text-muted-foreground">Or use email</span>
             </div>
           </div>
 
-          {/* Form */}
-  
           {/* Email Form */}
           <form onSubmit={handleSubmit} className="space-y-4 p-5">
-            {!isLogin && (
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                  <Input
-                    type="text"
-                    placeholder="John Doe"
-                    value={formData.fullName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, fullName: e.target.value })
-                    }
-                    className="pl-10 text-base"
-                    style={{ paddingLeft: "2.75rem" }}
-          
-                  />
-                </div>
-                {errors.fullName && (
-                  <p className="text-sm text-destructive mt-1">
-                    {errors.fullName}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Email */}
             <div>
-              <label className="text-sm font-medium mb-2 block">
-                Email Address
-              </label>
+              <label className="text-sm font-medium mb-2 block">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
                   type="email"
                   placeholder="you@example.com"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="pl-10 text-base"
                   style={{ paddingLeft: "2.75rem" }}
-
                 />
               </div>
-              {errors.email && (
-                <p className="text-sm text-destructive mt-1">
-                  {errors.email}
-                </p>
-              )}
+              {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
             </div>
 
-            {/* Password */}
             <div>
               <label className="text-sm font-medium mb-2 block">Password</label>
               <div className="relative">
@@ -227,152 +144,32 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Enter your password"
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="pl-10 text-base"
                   style={{ paddingLeft: "2.75rem" }}
-
                 />
-                <Button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                  variant="link"
-                >
+                <Button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2" variant="link">
                   {showPassword ? 'Hide' : 'Show'}
                 </Button>
               </div>
-              {errors.password && (
-                <p className="text-sm text-destructive mt-1">
-                  {errors.password}
-                </p>
-              )}
+              {errors.password && <p className="text-sm text-destructive mt-1">{errors.password}</p>}
             </div>
 
-            {/* Confirm Password (Signup only) */}
-            {!isLogin && (
-              <>
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Confirm your password"
-                      value={formData.confirmPassword}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      style={{ paddingLeft: "2.75rem" }}
-                    />
-                    <Button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                      variant="link"
-                    >
-                      {showConfirmPassword ? 'Hide' : 'Show'}
-                    </Button>
-                  </div>
-                  {errors.confirmPassword && (
-                    <p className="text-sm text-destructive mt-1">
-                      {errors.confirmPassword}
-                    </p>
-                  )}
-                </div>
+            <div className="flex justify-end pt-1">
+              <Link href="/login/forgot" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Forgot password?</Link>
+            </div>
 
-                {/* Terms */}
-                <div className="flex items-start gap-3 pt-2">
-                  <input
-                    id="acceptTerms"
-                    type="checkbox"
-                    checked={formData.acceptTerms}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        acceptTerms: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 mt-1 rounded border-border bg-background"
-                  />
-                  <label
-                    htmlFor="acceptTerms"
-                    className="text-sm text-muted-foreground"
-                  >
-                    I agree to the{" "}
-                    <Link
-                      href="/terms"
-                      className="text-foreground hover:underline font-medium"
-                    >
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link
-                      href="/privacy"
-                      className="text-foreground hover:underline font-medium"
-                    >
-                      Privacy Policy
-                    </Link>
-                  </label>
-                </div>
-                {errors.acceptTerms && (
-                  <p className="text-sm text-destructive mt-1">
-                    {errors.acceptTerms}
-                  </p>
-                )}
-              </>
-            )}
-
-            {/* Forgot Password */}
-            {isLogin && (
-              <div className="flex justify-end pt-1">
-                <Link
-                  href="/login/forgot"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            )}
-
-            {/* General Errors */}
-            {errors.general && (
-              <p className="text-sm text-destructive mt-2 text-center">
-                {errors.general}
-              </p>
-            )}
+            {errors.general && <p className="text-sm text-destructive mt-2 text-center">{errors.general}</p>}
 
             <Button type="submit" className="w-full h-11 mt-6" disabled={isLoading}>
-              {isLoading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
+              {isLoading ? "Please wait..." : "Sign In"}
             </Button>
           </form>
 
-          {/* Switch Mode */}
+          {/* Link to Signup page */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
-              <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setFormData({
-                    fullName: "",
-                    email: "",
-                    password: "",
-                    confirmPassword: "",
-                    acceptTerms: false,
-                  });
-                  setErrors({});
-                }}
-                className="text-foreground hover:underline font-medium transition-colors"
-              >
-                {isLogin ? "Sign up" : "Sign in"}
-              </button>
+              Don't have an account? <Link href="/signup" className="text-foreground hover:underline font-medium">Sign up</Link>
             </p>
           </div>
         </Card>

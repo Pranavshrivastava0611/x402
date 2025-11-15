@@ -75,11 +75,33 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-  const session = localStorage.getItem("supabase_session");
-  if (!session) {
-    router.replace(`/login?redirect=${encodeURIComponent("/dashboard")}`);
-  }
-}, [router]);
+    console.log('Dashboard: Starting authentication check...');
+    
+    const session = localStorage.getItem("supabase_session");
+    console.log('Dashboard: Session from localStorage:', session ? 'Found' : 'Not found');
+    
+    if (!session) {
+      console.log('Dashboard: No session found, redirecting to login...');
+      router.replace(`/login?redirect=${encodeURIComponent("/dashboard")}`);
+      return;
+    }
+
+    try {
+      const parsedSession = JSON.parse(session);
+      console.log('Dashboard: Session parsed successfully:', {
+        hasToken: !!parsedSession?.token,
+        hasUser: !!parsedSession?.user
+      });
+
+      // Check if cookie exists
+      const hasCookie = document.cookie.includes('auth_token');
+      console.log('Dashboard: Auth cookie present:', hasCookie);
+      
+    } catch (error) {
+      console.error('Dashboard: Error parsing session:', error);
+      router.replace(`/login?redirect=${encodeURIComponent("/dashboard")}`);
+    }
+  }, [router]);
 
 
   return (

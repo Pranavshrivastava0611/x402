@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         message: "Account created successfully.",
         user: newUser,
         token,
-        redirect: "/dashboard",
+        redirect: "/login",
       },
       { status: 201 }
     );

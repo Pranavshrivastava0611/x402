@@ -4,9 +4,11 @@ import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
+  console.log('Login API: Received login request');
   try {
     const body = await request.json();
     const { email, password } = body as { email?: string; password?: string };
+    console.log('Login API: Validating email:', email);
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
@@ -37,8 +39,9 @@ export async function POST(request: NextRequest) {
 
     // ✅ Generate JWT
     const token = generateToken({ userId: user.id, email: user.email });
+    console.log('Login API: Generated token');
 
-    // ✅ Prepare response
+    // ✅ Prepare response with session data
     const response = NextResponse.json(
       {
         message: "Login successful.",
@@ -49,7 +52,13 @@ export async function POST(request: NextRequest) {
           email_verified: user.email_verified,
           created_at: user.created_at,
         },
-        token,
+        session: {
+          token,
+          user: {
+            id: user.id,
+            email: user.email
+          }
+        },
         redirect: "/dashboard",
       },
       { status: 200 }
@@ -57,14 +66,15 @@ export async function POST(request: NextRequest) {
 
     // ✅ Set JWT cookie (very important for middleware)
     response.cookies.set("auth_token", token, {
-      httpOnly: true,
+      httpOnly: false, // Allow JavaScript access
       secure: false, // ✅ important for localhost
       sameSite: "lax", // ✅ safer in dev, "none" for production
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });
 
-
+    console.log('Login API: Set auth_token cookie');
+    console.log('Login API: Sending successful response');
     return response;
   } catch (err) {
     console.error("Login error:", err);
